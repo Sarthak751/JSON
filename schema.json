@@ -1,0 +1,144 @@
+{
+    "type": "object",
+    "definitions": {
+        "input_data_reference_spec": {
+            "type": "object",
+            "description": "Specification for raw data.",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "description": "Type of data source.",
+                    "enum": [
+                        "elasticsearch",
+                        "opensearch"
+                    ]
+                },
+                "port": {
+                    "type": "number",
+                    "description": "Elasticsearch port."
+                },
+                "url": {
+                    "type": "string",
+                    "description": "Elasticsearch IP."
+                },
+                "input_index": {
+                    "type": "string",
+                    "description": "Index of raw data."
+                }
+            },
+            "required": [
+                "type",
+                "port",
+                "url",
+                "input_index"
+            ]
+        },
+        "output_data_reference_spec": {
+            "type": "object",
+            "description": "Specification for intermediate data.",
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "description": "Type of data source.",
+                    "enum": [
+                        "elasticsearch",
+                        "opensearch"
+                    ]
+                },
+                "port": {
+                    "type": "number",
+                    "description": "Elasticsearch port."
+                },
+                "url": {
+                    "type": "string",
+                    "description": "Elasticsearch IP."
+                },
+                "output_index": {
+                    "type": "string",
+                    "description": "Index of intermediate data."
+                }
+            },
+            "required": [
+                "type",
+                "port",
+                "url"
+            ]
+        },
+        "service_group_spec": {
+            "type": "object",
+            "description": "Collection of tasks to be executed.",
+            "properties": {
+                "ml_engine": {
+                    "$ref": "#/definitions/ml_engine_spec"
+                },
+                "preprocess": {
+                    "$ref": "#/definitions/preprocess_spec"
+                },
+                "metrics": {
+                    "$ref": "#/definitions/metrics_spec"
+                }
+            },
+            "required": [
+                "preprocess",
+                "ml_engine"
+            ]
+        }
+    },
+    "properties": {
+        "usecase_name": {
+          "type": "string",
+          "maxLength": 24,
+          "minLength": 6,
+          "description": "A unique name (6 to 24 chars) that represents the use case has to be given here."
+        },
+        "tasks": {
+          "type": "array",
+          "items": {
+              "enum": [
+                  "service_groups"
+              ]
+          }
+        },
+        "email": {
+          "type": "string"
+        },
+        "log_level": {
+          "type": "string",
+          "enum": [
+              "INFO", 
+              "DEBUG", 
+              "CRITICAL"
+          ],
+          "description": "The level in which logs should be detailed."
+        },
+        "capacity_type": {
+          "type": "string",
+          "enum": [
+              "Small",
+              "Medium", 
+              "Large"
+          ],
+          "title": "Capacity Type"
+        },
+        "bundle_type": {
+          "type": "string",
+          "description": "License bundle type.",
+          "enum": [
+              "IOFA",
+              "IBII",
+              "IBCA_UAB",
+              "IBCA_UAC",
+              "dummy"
+          ]
+        }
+    },
+    "required": [
+        "usecasename", 
+        "task", 
+        "email", 
+        "log_level", 
+        "capacity_type", 
+        "bundle_type"
+    ]
+  }
+  
