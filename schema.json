@@ -1,6 +1,355 @@
 {
+    "$schema": "http://json-schema.org/schema#",
     "type": "object",
     "definitions": {
+        "forecasting_spec": {
+            "type": "object",
+            "description": "Specification for forecasting.",
+            "properties": {
+                "model": {
+                    "type": "string",
+                    "description": "Model to be use.",
+                    "enum": [
+                        "exponential_smoothing",
+                        "theta",
+                        "auto_arima",
+                        "FFT",
+                        "prophet",
+                        "auto"
+                    ]
+                },
+                "forecasting_granularity": {
+                    "type": "string",
+                    "description": "Granularity of forecasting forecasts.",
+                    "enum": [
+                        "D",
+                        "M",
+                        "Y",
+                        "H"
+                    ]
+                },
+                "horizon_window": {
+                    "type": "number",
+                    "description": "The number of periods for which forecast is being made."
+                },
+                "train_test_split_ratio": {
+                    "type": "number",
+                    "description": "Train tests split ration between 0 to 1.",
+                    "default": "0.7"
+                },
+                "metric": {
+                    "type": "string",
+                    "description": "Error metric to compute error.",
+                    "enum": [
+                        "mape",
+                        "mase",
+                        "mae",
+                        "rmse",
+                        "smape"
+                    ]
+                },
+                "prediction_interval": {
+                    "type": "number",
+                    "description": "Interval boundary to be used.",
+                    "default": "95"
+                },
+                "lookback": {
+                    "type": "number",
+                    "description": "The past N number of days which should be used for training the forecasting model."
+                },
+                "frequency": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 672,
+                    "description": "The frequency at which the forecasting ML job should be scheduled to be run by the job scheduler in mins."
+                }
+            },
+            "required": [
+                "model",
+                "forecasting_granularity",
+                "horizon_window",
+                "lookback",
+                "frequency"
+            ]
+        },
+        "inference_spec": {
+            "type": "object",
+            "description": "Inference specification.",
+            "properties": {
+                "lookback": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 180,
+                    "description": "The lookback value in minutes."
+                },
+                "frequency": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 59,
+                    "description": "The frequency at which the inference job should be run in minutes."
+                },
+                "delay": {
+                    "type": "number",
+                    "default": 0
+                }
+            },
+            "required": [
+                "lookback",
+                "frequency"
+            ]
+        },
+        "training_spec": {
+            "type": "object",
+            "description": "Training specification.",
+            "properties": {
+                "model": {
+                    "type": "string",
+                    "description": "Model to use.",
+                    "enum": [
+                        "ZScore",
+                        "IsolationForest",
+                        "FBProphet",
+                        "MVIsolationForest",
+                        "predictive",
+                        "LinearRegression"
+                    ]
+                },
+                "explainer": {
+                    "type": "string",
+                    "description": "Explainer to use.",
+                    "enum": [
+                        "LIME"
+                    ]
+                },
+                "lookback": {
+                    "type": "number",
+                    "description": "Number of days to lookback."
+                },
+                "frequency": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 24,
+                    "description": "Frequency of job run in hours."
+                },
+                "dynamic_threshold": {
+                    "type": "object",
+                    "description": ": The thresholds that needs to be applied on the raw anomaly scores.",
+                    "properties": {
+                        "lower": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 100
+                        },
+                        "upper": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 100
+                        }
+                    }
+                },
+                "find_threshold": {
+                    "type": "object"
+                },
+                "splits" : {
+                    "type": "array",
+                    "description": "Fields on which the data will be partitioned.",
+                    "items": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "minItems": 0,
+                    "uniqueItems": true
+                }
+            },
+            "required": [
+                "model"
+            ]
+        },
+        "offline_correlation_spec": {
+            "type": "object",
+            "description": "Offline Correlation specification.",
+            "properties": {
+                "model": {
+                    "type": "string",
+                    "description": "Model to use.",
+                    "enum": [
+                        "Pearson",
+                        "DTW"
+                    ]
+                },
+                "lookback": {
+                    "type": "number",
+                    "description": "Number of days to lookback."
+                },
+                "frequency": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 24,
+                    "description": "Frequency of job run in hours."
+                },
+                "absolute_threshold": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1,
+                    "description": "The absolute threshold to apply on correlation value"
+                },
+                "lags": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100,
+                    "description": "The maximum number of lags to be considered for creating lag variables"
+                },
+                "convert_wide_to_long": {
+                    "type": "boolean",
+                    "description": "Boolean to specify whether input data is in Wide Format",
+                    "enum":[true,false]
+                },
+                "imputation_method": {
+                    "type": "string",
+                    "description": "Type of imputation to apply for missing data",
+                    "enum":[
+                        "zero",
+                        "mean",
+                        "median"
+                    ]
+                },
+                "splits" : {
+                    "type": "array",
+                    "description": "Fields on which the data will be partitioned.",
+                    "items": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "minItems": 0,
+                    "uniqueItems": true
+                },
+                "enable_subset_corr": {
+                    "type": "boolean",
+                    "description": "Boolean to specify whether subset correlation is required or default n x n correlation is required",
+                    "enum":[true,false]
+                },
+                "subset_corr_group_definition" : {
+                    "type": "array",
+                    "description": "Groups definition:Column_name=Column_value",
+                    "items": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "minItems": 1,
+                    "uniqueItems": true
+                },
+                "subset_corr_specification" : {
+                    "type": "array",
+                    "description": "Correlation definition eg: G1:G1,G2",
+                    "items": {
+                        "type": "string",
+                        "minLength": 1
+                    },
+                    "minItems": 1,
+                    "uniqueItems": true
+
+                }
+            },
+            "required": [
+                "model"
+            ]
+        },
+        "online_ranking_spec": {
+            "type": "object",
+            "description": "Online ranking specification.",
+            "properties": {
+                "lookback": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 59,
+                    "description": "The lookback value in minutes."
+                },
+                "model" : {
+                    "type": "array",
+                    "description": "List of RCA Algorithms to run",
+                    "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "enum": [
+                            "LaggedCorrelationAlgo",
+                            "WindowAnalysisAlgo",
+                            "TrendAnalysisAlgo",
+                            "ExtremeLaggedCorrelationAlgo"
+                        ]
+                    },
+                    "minItems": 1,
+                    "uniqueItems": true
+                },
+                "top_metrics": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 100,
+                    "description": "Number of results to show for RCA"
+                },
+                "window_analysis": {
+                    "type": "object",
+                    "properties": {
+                        "window_size":{
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 10000000,
+                            "description": "Number of buckets to be considered for window analysis"
+                        }
+                    }
+                },
+                "trend_analysis": {
+                    "type": "object",
+                    "properties": {
+                        "sliding_window":{
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 10000000,
+                            "description": "Number of buckets to be considered for trend analysis"
+                        }
+                    }
+                }
+
+            },
+            "required": [
+                "model",
+                "top_metrics"
+            ]
+        },
+        "metric_spec": {
+            "type": "object",
+            "properties": {
+                "column": {
+                    "type": "string"
+                },
+                "aggregation": {
+                    "type": "object",
+                    "properties": {
+                        "method": {
+                            "type": "string",
+                            "enum": [
+                                "avg",
+                                "count",
+                                "sum",
+                                "min",
+                                "max",
+                                "count_distinct",
+                                "median"
+                            ]
+                        }
+                    }
+                }
+            },
+            "required": [
+                "column"
+            ]
+        },
+        "metrics_spec": {
+            "anyOf": [{"type": "array"},
+                {"type": "null"}],
+            "items": {
+                "$ref": "#/definitions/metric_spec"
+            }
+        },
         "input_data_reference_spec": {
             "type": "object",
             "description": "Specification for raw data.",
@@ -64,6 +413,43 @@
                 "url"
             ]
         },
+        "preprocess_spec": {
+            "type": "object",
+            "description": "Specification for preprocessing.",
+            "properties": {
+                "aggregation": {
+                    "description": "Default specification for aggregation.",
+                    "oneOf": [
+                        {
+                            "type": "null"
+                        },
+                        {
+                            "type": "object",
+                            "properties": {
+                                "method": {
+                                    "type": "string",
+                                    "enum": [
+                                        "avg",
+                                        "count",
+                                        "sum",
+                                        "min",
+                                        "max",
+                                        "count_distinct",
+                                        "median"
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "method"
+                            ]
+                        }
+                    ]
+                }
+            },
+            "required": [
+                "aggregation"
+            ]
+        },
         "service_group_spec": {
             "type": "object",
             "description": "Collection of tasks to be executed.",
@@ -82,63 +468,181 @@
                 "preprocess",
                 "ml_engine"
             ]
+        },
+        "ml_engine_spec": {
+            "description": "Specification for machine learning.",
+            "oneOf": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "forecasting": {
+                            "$ref": "#/definitions/forecasting_spec"
+                        }
+                    },
+                    "required": [
+                        "forecasting"
+                    ]
+                },
+                {
+                    "type": "object",
+                    "properties": {
+                        "training": {
+                            "$ref": "#/definitions/training_spec"
+                        },
+                        "inference": {
+                            "$ref": "#/definitions/inference_spec"
+                        }
+                    },
+                    "required": [
+                        "training",
+                        "inference"
+                    ]
+                },
+                {
+                    "type": "object",
+                    "properties": {
+                        "offline_correlation": {
+                            "$ref": "#/definitions/offline_correlation_spec"
+                        },
+                        "online_ranking": {
+                            "$ref": "#/definitions/online_ranking_spec"
+                        }
+                    },
+                    "required": [
+                        "offline_correlation",
+                        "online_ranking"
+                    ]
+                }
+            ]
         }
     },
     "properties": {
         "usecase_name": {
-          "type": "string",
-          "maxLength": 24,
-          "minLength": 6,
-          "description": "A unique name (6 to 24 chars) that represents the use case has to be given here."
-        },
-        "tasks": {
-          "type": "array",
-          "items": {
-              "enum": [
-                  "service_groups"
-              ]
-          }
-        },
-        "email": {
-          "type": "string"
-        },
-        "log_level": {
-          "type": "string",
-          "enum": [
-              "INFO", 
-              "DEBUG", 
-              "CRITICAL"
-          ],
-          "description": "The level in which logs should be detailed."
-        },
-        "capacity_type": {
-          "type": "string",
-          "enum": [
-              "Small",
-              "Medium", 
-              "Large"
-          ],
-          "title": "Capacity Type"
+            "type": "string",
+            "maxLength": 24,
+            "minLength": 6,
+            "description": "A unique name (6 to 24 chars) that represents the use case has to be given here."
         },
         "bundle_type": {
-          "type": "string",
-          "description": "License bundle type.",
-          "enum": [
-              "IOFA",
-              "IBII",
-              "IBCA_UAB",
-              "IBCA_UAC",
-              "dummy"
-          ]
+            "type": "string",
+            "description": "License bundle type.",
+            "enum": [
+                "IOFA",
+                "IBII",
+                "IBCA_UAB",
+                "IBCA_UAC",
+                "dummy"
+            ]
+        },
+        "model_type": {
+            "type": "string",
+            "description": "Framework processing flow type.",
+            "enum": [
+                "forecasting",
+                "anomalydetection",
+                "regression",
+                "mv_anomalydetection",
+                "multivariate_forecasting",
+                "predictive",
+                "metric_correlation",
+                "extreme_correlation"
+            ]
+        },
+        "tasks": {
+            "type": "array",
+            "items": {
+                "enum": [
+                    "service_groups"
+                ]
+            }
+        },
+        "email": {
+            "type": "string"
+        },
+        "log-level": {
+            "type": "string",
+            "enum": [
+                "INFO",
+                "DEBUG",
+                "CRITICAL"
+            ],
+            "description": "The level in which logs should be detailed."
+        },
+        "data_references": {
+            "type": "object",
+            "description": "The specification of the data to be processed and stored.",
+            "properties": {
+                "source": {
+                    "$ref": "#/definitions/input_data_reference_spec"
+                },
+                "destination": {
+                    "$ref": "#/definitions/output_data_reference_spec"
+                }
+            },
+            "required": [
+                "source",
+                "destination"
+            ]
+        },
+        "timestamp_column": {
+            "type": "string",
+            "description": "Timestamp column name associated with a record."
+        },
+        "splits": {
+            "type": "array",
+            "description": "Fields on which the data will be partitioned.",
+            "items": {
+                "type": "string",
+                "minLength": 1
+            },
+            "minItems": 0,
+            "uniqueItems": true
+        },
+        "influencers": {
+            "type": "array",
+            "description": "Fields that influences or contributes to anomalies in the data",
+            "items": {
+                "type": "string",
+                "minLength": 1
+            },
+            "minItems": 0,
+            "uniqueItems": true
+        },
+        "bucket_size": {
+            "type": "number",
+            "description": "Size of window of time to resample/aggregate raw data."
+        },
+        "model_retention": {
+            "type": "number",
+            "description": "Number of Days model data should be retained ."
+        },
+        "data_retention": {
+            "type": "number",
+            "description": "Number of Days data should be retained "
+        },
+        "data_cleanup_frequency": {
+            "type": "number",
+            "description": "Frequency of data cleanup job."
+        },
+        "service_groups": {
+            "type": "object",
+            "description": "Collection of tasks to be executed for every partition.",
+            "minProperties": 1,
+            "maxProperties": 1,
+            "properties": {
+                "service_group_1": {
+                    "$ref": "#/definitions/service_group_spec"
+                }
+            }
         }
     },
     "required": [
-        "usecasename", 
-        "task", 
-        "email", 
-        "log_level", 
-        "capacity_type", 
-        "bundle_type"
+        "usecase_name",
+        "bundle_type",
+        "data_references",
+        "bucket_size",
+        "service_groups",
+        "splits",
+        "timestamp_column"
     ]
-  }
-  
+}
